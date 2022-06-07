@@ -22,3 +22,77 @@ options(warn=-1)
 svv_background_color <- "#F5F5F5"
 ```
 
+
+```{r get_data}
+# Load prepared data (avoiding fetching all data for every knit!)
+trp_adt_krs <-
+  readRDS(file = "data/trp_adt_krs.rds")
+
+trp_adt_krs_lette <- 
+  trp_adt_krs %>% 
+  dplyr::filter(
+    length_range == "lette"
+  ) %>% 
+  dplyr::arrange(
+    desc(aadt)
+  )
+
+trp_adt_krs_lette_ids <-
+  trp_adt_krs_lette$trp_id %>% 
+  unique()
+```
+
+
+```{r functions}
+create_xdt_barplot <- function(trp_xdt_long_format) {
+  
+  trp_xdt_long_format %>% 
+    ggplot2::ggplot(aes(x = year, y = aadt)) +
+    ggplot2::geom_col() +
+    ggplot2::facet_grid(
+      rows = vars(road_category_and_number_and_point_name),
+      labeller = label_wrap_gen(width = 12)
+    ) +
+    theme_light(base_size = 10) +
+    theme(#axis.text.x = element_text(angle = 90),
+          axis.ticks.x = element_blank(),
+          axis.title.y = element_text(
+            margin = margin(t = 0, r = 15, b = 0, l = 0)),
+          panel.grid.minor.x = element_blank(),
+          panel.grid.major.x = element_blank(),
+          panel.grid.minor.y = element_blank(),
+          strip.text.y = element_text(angle = 90),
+          strip.background = element_rect(fill = "#444f55"),
+          plot.background = element_rect(fill = svv_background_color),
+          panel.background = element_rect(fill = svv_background_color),
+          legend.position = "bottom",
+          legend.background = element_rect(fill = svv_background_color),
+          legend.key = element_blank()) +
+    labs(x = NULL, y = "Årsdøgntrafikk",
+         caption = "Data: Statens vegvesen og fylkeskommunene") +
+    ggtitle("Gjennomsnittlig antall kjøretøy per dag",
+            subtitle = "")
+}
+```
+
+
+```{r plot_1, fig.height=6}
+trp_adt_krs_lette %>% 
+  dplyr::filter(
+    trp_id %in% trp_adt_krs_lette_ids[1:5]
+  ) %>% 
+  create_xdt_barplot()
+```
+
+
+
+```{r plot_2, fig.height=6}
+trp_adt_krs_lette %>% 
+  dplyr::filter(
+    trp_id %in% trp_adt_krs_lette_ids[6:10]
+  ) %>% 
+  create_xdt_barplot()
+```
+
+
+
