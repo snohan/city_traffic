@@ -1,0 +1,24 @@
+---
+title: ""
+knit: (function(input_file, encoding){
+  rmarkdown::render(input_file, encoding=encoding, output_file = 'docs/index.html')})
+output: 
+  html_document:
+    css: svv.css
+    number_sections: true
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: false
+    toc_depth: 2
+fig_width: 5
+---
+
+```{r setup, include = FALSE, echo = FALSE, warning=FALSE, message=FALSE}
+# Packages are loaded through sourcing rmd_setup.R
+source("H:/Programmering/R/byindeks/rmd_setup.R")
+library(viridis)
+options(warn=-1)
+svv_background_color <- "#F5F5F5"
+```
+
