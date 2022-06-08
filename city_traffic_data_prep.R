@@ -26,6 +26,7 @@ trp_metadata <- trps %>%
   dplyr::select(
     trp_id,
     name,
+    traffic_type,
     road_category,
     road_category_and_number,
     county_geono,
@@ -50,6 +51,7 @@ trp_metadata <- trps %>%
 # Bike MDT
 # Bike AADT
 
+## Pointindex and trp ----
 pointindex_2020_krs <-
   get_published_pointindex_for_months(957, 2020, 12)
 pointindex_2021_krs <-
@@ -172,3 +174,188 @@ trp_adt <-
 
 trp_adt %>%
   saveRDS(file = "data/trp_adt_krs.rds")
+
+## MDT ----
+mdt_2019 <- get_mdt_for_trp_list(city_trps, "2019")
+mdt_2020 <- get_mdt_for_trp_list(city_trps, "2020")
+mdt_2021 <- get_mdt_for_trp_list(city_trps, "2021")
+mdt_2022 <- get_mdt_for_trp_list(city_trps, "2022")
+
+mdts <- dplyr::bind_rows(
+  mdt_2019,
+  mdt_2020,
+  mdt_2021,
+  mdt_2022
+) %>%
+  dplyr::filter(coverage > 50) %>%
+  dplyr::select(trp_id, year, month, mdt) %>%
+  tidyr::complete(trp_id = city_trps, year, month) %>%
+  dplyr::filter(
+    month < 6
+  )
+
+
+trp_mdt_long <-
+  trp_metadata %>%
+  dplyr::filter(
+    trp_id %in% city_trps,
+    road_category %in% c("E", "R")
+  ) %>%
+  dplyr::mutate(
+    road_category_and_number_and_point_name =
+      paste0(road_category_and_number, " ", name)
+  ) %>%
+  dplyr::left_join(mdts, by = "trp_id") %>%
+  dplyr::mutate(
+    month_object = lubridate::make_date(year = 2000, month = month),
+    month_name = lubridate::month(month_object, label = TRUE, abbr = FALSE)) %>%
+  dplyr::select(
+    trp_id,
+    road_category_and_number_and_point_name,
+    year,
+    month_object,
+    mdt
+  ) %>%
+  dplyr::filter(
+    trp_id %in% c(
+      "40820V121304",
+      "57166V121303",
+      "00000V1702725",
+      "26071V121746",
+      "02466V121760",
+      "06702V121764",
+      "57502V121402"
+    )
+  )
+
+trp_mdt_long %>%
+  saveRDS(file = "data/trp_mdt_long_krs.rds")
+
+
+## Bike AADT ----
+bike_trp_krs <-
+  trp_metadata %>%
+  dplyr::filter(
+    municipality_name == "Kristiansand",
+    traffic_type == "BICYCLE"
+  ) %>%
+  dplyr::mutate(
+    road_category_and_number_and_point_name =
+      paste0(road_category_and_number, " ", name)
+  )
+
+bike_adt <-
+  get_aadt_for_trp_list(
+    bike_trp_krs$trp_id
+  ) %>%
+  dplyr::filter(
+    year > 2015
+  ) %>%
+  dplyr::rename(
+    aadt = adt
+  )
+
+bike_trp_adt <-
+  bike_trp_krs %>%
+  dplyr::select(
+    trp_id,
+    name,
+    road_category,
+    road_category_and_number,
+    road_category_and_number_and_point_name
+  ) %>%
+  dplyr::right_join(
+    bike_adt,
+    by = "trp_id"
+  )
+
+bike_trp_adt %>%
+  saveRDS(file = "data/bike_trp_adt_krs.rds")
+
+
+## Bike MDT ----
+bike_mdt_2019 <- get_mdt_for_trp_list(bike_trp_krs$trp_id, "2019")
+bike_mdt_2020 <- get_mdt_for_trp_list(bike_trp_krs$trp_id, "2020")
+bike_mdt_2021 <- get_mdt_for_trp_list(bike_trp_krs$trp_id, "2021")
+bike_mdt_2022 <- get_mdt_for_trp_list(bike_trp_krs$trp_id, "2022")
+
+bike_mdts <-
+  dplyr::bind_rows(
+    bike_mdt_2019,
+    bike_mdt_2020,
+    bike_mdt_2021,
+    bike_mdt_2022
+  ) %>%
+  dplyr::filter(
+    coverage > 50,
+    month < 6
+  ) %>%
+  dplyr::select(trp_id, year, month, mdt) %>%
+  tidyr::complete(trp_id = bike_trp_adt_krs$trp_id, year, month)
+
+
+bike_mdt_long <-
+  bike_trp_krs %>%
+  dplyr::left_join(
+    bike_mdts,
+    by = "trp_id"
+  ) %>%
+  dplyr::mutate(
+    month_object = lubridate::make_date(year = 2000, month = month),
+    month_name = lubridate::month(month_object, label = TRUE, abbr = FALSE)
+  ) %>%
+  dplyr::select(
+    trp_id,
+    road_category_and_number_and_point_name,
+    year,
+    month_object,
+    mdt
+  )
+
+# TODO: sort by roadref
+bike_mdt_long %>%
+  saveRDS(file = "data/bike_trp_mdt_long_krs.rds")
+
+
+# Tromsø ----
+## Bike AADT ----
+bike_trp_tro <-
+  trp_metadata %>%
+  dplyr::filter(
+    municipality_name == "Troms\u00f8",
+    traffic_type == "BICYCLE"
+  )
+
+bike_adt_tro <-
+  get_aadt_for_trp_list(
+    bike_trp_tro$trp_id
+  ) %>%
+  dplyr::filter(
+    year > 2015
+  ) %>%
+  dplyr::rename(
+    aadt = adt
+  )
+
+bike_trp_adt_tro <-
+  bike_trp_tro %>%
+  dplyr::mutate(
+    road_category_and_number_and_point_name =
+      paste0(road_category_and_number, " ", name)
+  ) %>%
+  dplyr::select(
+    trp_id,
+    name,
+    road_category,
+    road_category_and_number,
+    road_category_and_number_and_point_name
+  ) %>%
+  dplyr::right_join(
+    bike_adt_tro,
+    by = "trp_id"
+  )
+
+bike_trp_adt_tro %>%
+  saveRDS(file = "data/bike_trp_adt_tro.rds")
+
+

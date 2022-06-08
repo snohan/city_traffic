@@ -1,5 +1,5 @@
 ---
-title: ""
+title: "Bytrafikk"
 knit: (function(input_file, encoding){
   rmarkdown::render(input_file, encoding=encoding, output_file = 'docs/index.html')})
 output: 
@@ -40,59 +40,304 @@ trp_adt_krs_lette <-
 trp_adt_krs_lette_ids <-
   trp_adt_krs_lette$trp_id %>% 
   unique()
+
+trp_adt_krs_tunge <- 
+  trp_adt_krs %>% 
+  dplyr::filter(
+    length_range == "tunge"
+  ) %>% 
+  dplyr::arrange(
+    desc(aadt)
+  )
+
+trp_adt_krs_tunge_ids <-
+  trp_adt_krs_tunge$trp_id %>% 
+  unique()
+
+trp_mdt_krs <-
+  readRDS(file = "data/trp_mdt_long_krs.rds")
+
+
+bike_trp_adt_krs <-
+  readRDS(file = "data/bike_trp_adt_krs.rds")
+
+bike_mdt_krs <-
+  readRDS(file = "data/bike_trp_mdt_long_krs.rds")
+
+
+
+bike_trp_adt_tro <-
+  readRDS(file = "data/bike_trp_adt_tro.rds")
+
 ```
 
 
 ```{r functions}
 create_xdt_barplot <- function(trp_xdt_long_format) {
   
+  x_axis_labels <- 
+    min(trp_xdt_long_format$year):max(trp_xdt_long_format$year)
+
   trp_xdt_long_format %>% 
     ggplot2::ggplot(aes(x = year, y = aadt)) +
-    ggplot2::geom_col() +
+    ggplot2::geom_col(
+      width = 0.5,
+      colour = "#008ec2",
+      fill = "#008ec2"
+    ) +
     ggplot2::facet_grid(
       rows = vars(road_category_and_number_and_point_name),
-      labeller = label_wrap_gen(width = 12)
+      labeller = label_wrap_gen(width = 12),
+      scales = "free_y"
     ) +
     theme_light(base_size = 10) +
-    theme(#axis.text.x = element_text(angle = 90),
-          axis.ticks.x = element_blank(),
-          axis.title.y = element_text(
-            margin = margin(t = 0, r = 15, b = 0, l = 0)),
-          panel.grid.minor.x = element_blank(),
-          panel.grid.major.x = element_blank(),
-          panel.grid.minor.y = element_blank(),
-          strip.text.y = element_text(angle = 90),
-          strip.background = element_rect(fill = "#444f55"),
-          plot.background = element_rect(fill = svv_background_color),
-          panel.background = element_rect(fill = svv_background_color),
-          legend.position = "bottom",
-          legend.background = element_rect(fill = svv_background_color),
-          legend.key = element_blank()) +
-    labs(x = NULL, y = "Årsdøgntrafikk",
+    theme(
+      #axis.text.x = element_text(angle = 90),
+      axis.ticks.x = element_blank(),
+      axis.title.y = element_text(
+        margin = margin(t = 0, r = 15, b = 0, l = 0)),
+      panel.grid.minor.x = element_blank(),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.y = element_blank(),
+      strip.text.y = element_text(angle = 90),
+      strip.background = element_rect(fill = "#444f55"),
+      plot.background = element_rect(fill = svv_background_color),
+      panel.background = element_rect(fill = svv_background_color),
+      legend.position = "bottom",
+      legend.background = element_rect(fill = svv_background_color),
+      legend.key = element_blank()
+    ) +
+    scale_x_continuous(
+      labels = x_axis_labels, 
+      breaks = x_axis_labels
+    ) +
+    labs(
+      x = NULL, 
+      y = "\u00c5rsd\u00f8gntrafikk",
+      caption = "Data: Statens vegvesen og fylkeskommunene"
+    ) +
+    ggtitle(
+      "Gjennomsnittlig antall passeringer per dag",
+      subtitle = ""
+    )
+}
+
+create_mdt_barplot <- function(trp_mdt_long_format) {
+  
+  min_month_object <- min(trp_mdt_long_format$month_object)
+  max_month_object <- max(trp_mdt_long_format$month_object)
+  
+  trp_mdt_long_format %>% 
+    dplyr::mutate(year = as.character(year)) %>% 
+    ggplot2::ggplot(aes(x = month_object, y = mdt, fill = year)) +
+    ggplot2::geom_col(position = "dodge") +
+    ggplot2::facet_grid(
+      rows = vars(road_category_and_number_and_point_name),
+      labeller = label_wrap_gen(width = 12),
+      scales = "free_y"
+    ) +
+    theme_light(base_size = 10) +
+    theme(
+      axis.text.x = element_text(angle = 90),
+      axis.ticks.x = element_blank(),
+      axis.title.y = element_text(
+        margin = margin(t = 0, r = 15, b = 0, l = 0)),
+      panel.grid.minor.x = element_blank(),
+      panel.grid.major.x = element_blank(),
+      panel.grid.minor.y = element_blank(),
+      strip.text.y = element_text(angle = 90),
+      strip.background = element_rect(fill = "#444f55"),
+      plot.background = element_rect(fill = svv_background_color),
+      panel.background = element_rect(fill = svv_background_color),
+      legend.position = "bottom",
+      legend.background = element_rect(fill = svv_background_color),
+      legend.key = element_blank()
+    ) +
+    scale_x_date(
+      breaks = scales::breaks_width("months"),
+      labels = scales::label_date("%b"),
+      #limits = c(min_month_object, max_month_object)
+    ) +
+    scale_fill_viridis_d(
+      name = "\u00c5r",
+      option = "viridis"
+    ) +
+    labs(x = NULL, y = "M\u00e5nedsd\u00f8gntrafikk",
          caption = "Data: Statens vegvesen og fylkeskommunene") +
-    ggtitle("Gjennomsnittlig antall kjøretøy per dag",
+    ggtitle("Gjennomsnittlig antall passeringer per dag",
             subtitle = "")
 }
+
 ```
 
 
-```{r plot_1, fig.height=6}
-trp_adt_krs_lette %>% 
-  dplyr::filter(
-    trp_id %in% trp_adt_krs_lette_ids[1:5]
-  ) %>% 
-  create_xdt_barplot()
+# Kristiansand
+
+<!--
+## Årsdøgntrafikk lette kjøretøy
+
+```{r plot_1, fig.height=6, fig.width=5}
+# trp_adt_krs_lette %>% 
+#   dplyr::filter(
+#     trp_id %in% trp_adt_krs_lette_ids[1:5]
+#   ) %>% 
+#   create_xdt_barplot()
+```
+
+<br>
+
+```{r plot_2, fig.height=6, fig.width=5}
+# trp_adt_krs_lette %>% 
+#   dplyr::filter(
+#     trp_id %in% trp_adt_krs_lette_ids[6:10]
+#   ) %>% 
+#   create_xdt_barplot()
+```
+
+
+```{r plot_3, fig.height=6, fig.width=5}
+# trp_adt_krs_lette %>% 
+#   dplyr::filter(
+#     trp_id %in% trp_adt_krs_lette_ids[11:15]
+#   ) %>% 
+#   create_xdt_barplot()
 ```
 
 
 
-```{r plot_2, fig.height=6}
-trp_adt_krs_lette %>% 
-  dplyr::filter(
-    trp_id %in% trp_adt_krs_lette_ids[6:10]
-  ) %>% 
-  create_xdt_barplot()
+
+```{r plot_4, fig.height=6, fig.width=5}
+# trp_adt_krs_lette %>% 
+#   dplyr::filter(
+#     trp_id %in% trp_adt_krs_lette_ids[16:20]
+#   ) %>% 
+#   create_xdt_barplot()
 ```
+
+
+```{r plot_5, fig.height=6, fig.width=5}
+# trp_adt_krs_lette %>% 
+#   dplyr::filter(
+#     trp_id %in% trp_adt_krs_lette_ids[21:25]
+#   ) %>% 
+#   create_xdt_barplot()
+```
+
+
+
+```{r plot_6, fig.height=6, fig.width=5}
+# trp_adt_krs_lette %>% 
+#   dplyr::filter(
+#     trp_id %in% trp_adt_krs_lette_ids[26:30]
+#   ) %>% 
+#   create_xdt_barplot()
+```
+
+
+```{r plot_7, fig.height=6, fig.width=5}
+# trp_adt_krs_lette %>% 
+#   dplyr::filter(
+#     trp_id %in% trp_adt_krs_lette_ids[31:35]
+#   ) %>% 
+#   create_xdt_barplot()
+```
+-->
+<!--
+## Årsdøgntrafikk tunge kjøretøy
+
+```{r plot_heavy_1, fig.height=6, fig.width=5}
+# trp_adt_krs_tunge %>% 
+#   dplyr::filter(
+#     trp_id %in% trp_adt_krs_tunge_ids[1:5]
+#   ) %>% 
+#   create_xdt_barplot()
+```
+
+```{r plot_heavy_2, fig.height=6, fig.width=5}
+# trp_adt_krs_tunge %>% 
+#   dplyr::filter(
+#     trp_id %in% trp_adt_krs_tunge_ids[6:10]
+#   ) %>% 
+#   create_xdt_barplot()
+```
+
+```{r plot_heavy_3, fig.height=6, fig.width=5}
+# trp_adt_krs_tunge %>% 
+#   dplyr::filter(
+#     trp_id %in% trp_adt_krs_tunge_ids[11:15]
+#   ) %>% 
+#   create_xdt_barplot()
+```
+
+```{r plot_heavy_4, fig.height=6, fig.width=5}
+# trp_adt_krs_tunge %>% 
+#   dplyr::filter(
+#     trp_id %in% trp_adt_krs_tunge_ids[16:20]
+#   ) %>% 
+#   create_xdt_barplot()
+```
+
+```{r plot_heavy_5, fig.height=6, fig.width=5}
+# trp_adt_krs_tunge %>% 
+#   dplyr::filter(
+#     trp_id %in% trp_adt_krs_tunge_ids[21:25]
+#   ) %>% 
+#   create_xdt_barplot()
+```
+
+```{r plot_heavy_6, fig.height=6, fig.width=5}
+# trp_adt_krs_tunge %>% 
+#   dplyr::filter(
+#     trp_id %in% trp_adt_krs_tunge_ids[26:30]
+#   ) %>% 
+#   create_xdt_barplot()
+```
+
+```{r plot_heavy_7, fig.height=6, fig.width=5}
+# trp_adt_krs_tunge %>% 
+#   dplyr::filter(
+#     trp_id %in% trp_adt_krs_tunge_ids[31:35]
+#   ) %>% 
+#   create_xdt_barplot()
+```
+-->
+
+
+## Månedsdøgntrafikk alle kjøretøy
+
+```{r plot_mdt, fig.height=8, fig.width=6}
+trp_mdt_krs %>% 
+  create_mdt_barplot()
+```
+
+<!--
+## Årsdøgntrafikk sykkel
+
+```{r plot_bike, fig.height=6, fig.width=5}
+#bike_trp_adt_krs %>% 
+#  create_xdt_barplot()
+```
+-->
+
+## Månedsdøgntrafikk sykkel
+
+```{r plot_mdt_bike, fig.height=8, fig.width=6}
+bike_mdt_krs %>% 
+  create_mdt_barplot()
+```
+
+<!--
+# Tromsø
+
+## Årsdøgntrafikk sykkel
+
+```{r plot_bike_tro, fig.height=6, fig.width=5}
+#bike_trp_adt_tro %>% 
+#  create_xdt_barplot()
+```
+-->
+
+
 
 
 
