@@ -191,7 +191,7 @@ mdts <- dplyr::bind_rows(
   dplyr::select(trp_id, year, month, mdt) %>%
   tidyr::complete(trp_id = city_trps, year, month) %>%
   dplyr::filter(
-    month < 6
+    month %in% c(6, 7, 8)
   )
 
 
@@ -288,10 +288,10 @@ bike_mdts <-
   ) %>%
   dplyr::filter(
     coverage > 50,
-    month < 6
+    month %in% c(6, 7, 8)
   ) %>%
   dplyr::select(trp_id, year, month, mdt) %>%
-  tidyr::complete(trp_id = bike_trp_adt_krs$trp_id, year, month)
+  tidyr::complete(trp_id = bike_trp_adt$trp_id, year, month)
 
 
 bike_mdt_long <-
