@@ -25,49 +25,53 @@ svv_background_color <- "#F5F5F5"
 
 ```{r get_data}
 # Load prepared data (avoiding fetching all data for every knit!)
-trp_adt_krs <-
-  readRDS(file = "data/trp_adt_krs.rds")
+# trp_adt_krs <-
+#   readRDS(file = "data/trp_adt_krs.rds")
+# 
+# trp_adt_krs_lette <- 
+#   trp_adt_krs %>% 
+#   dplyr::filter(
+#     length_range == "lette"
+#   ) %>% 
+#   dplyr::arrange(
+#     desc(aadt)
+#   )
+# 
+# trp_adt_krs_lette_ids <-
+#   trp_adt_krs_lette$trp_id %>% 
+#   unique()
+# 
+# trp_adt_krs_tunge <- 
+#   trp_adt_krs %>% 
+#   dplyr::filter(
+#     length_range == "tunge"
+#   ) %>% 
+#   dplyr::arrange(
+#     desc(aadt)
+#   )
+# 
+# trp_adt_krs_tunge_ids <-
+#   trp_adt_krs_tunge$trp_id %>% 
+#   unique()
+# 
+# trp_mdt_krs <-
+#   readRDS(file = "data/trp_mdt_long_krs.rds")
+# 
+# 
+# bike_trp_adt_krs <-
+#   readRDS(file = "data/bike_trp_adt_krs.rds")
+# 
+# bike_mdt_krs <-
+#   readRDS(file = "data/bike_trp_mdt_long_krs.rds")
+# 
+# 
+# 
+# bike_trp_adt_tro <-
+#   readRDS(file = "data/bike_trp_adt_tro.rds")
 
-trp_adt_krs_lette <- 
-  trp_adt_krs %>% 
-  dplyr::filter(
-    length_range == "lette"
-  ) %>% 
-  dplyr::arrange(
-    desc(aadt)
-  )
+big_cities_bike_mdt <-
+  readRDS(file = "data/big_cities_bike_mdt.rds")
 
-trp_adt_krs_lette_ids <-
-  trp_adt_krs_lette$trp_id %>% 
-  unique()
-
-trp_adt_krs_tunge <- 
-  trp_adt_krs %>% 
-  dplyr::filter(
-    length_range == "tunge"
-  ) %>% 
-  dplyr::arrange(
-    desc(aadt)
-  )
-
-trp_adt_krs_tunge_ids <-
-  trp_adt_krs_tunge$trp_id %>% 
-  unique()
-
-trp_mdt_krs <-
-  readRDS(file = "data/trp_mdt_long_krs.rds")
-
-
-bike_trp_adt_krs <-
-  readRDS(file = "data/bike_trp_adt_krs.rds")
-
-bike_mdt_krs <-
-  readRDS(file = "data/bike_trp_mdt_long_krs.rds")
-
-
-
-bike_trp_adt_tro <-
-  readRDS(file = "data/bike_trp_adt_tro.rds")
 
 ```
 
@@ -79,11 +83,18 @@ create_xdt_barplot <- function(trp_xdt_long_format) {
     min(trp_xdt_long_format$year):max(trp_xdt_long_format$year)
 
   trp_xdt_long_format %>% 
-    ggplot2::ggplot(aes(x = year, y = aadt)) +
+    ggplot2::ggplot(aes(x = year, y = xdt)) +
     ggplot2::geom_col(
       width = 0.5,
-      colour = "#008ec2",
-      fill = "#008ec2"
+      colour = "#ed9300",
+      fill = "#ed9300"
+    ) +
+    ggplot2::geom_text(
+      aes(
+        y = 0,
+        vjust = -1,
+        label = xdt
+      )
     ) +
     ggplot2::facet_grid(
       rows = vars(road_category_and_number_and_point_name),
@@ -113,7 +124,7 @@ create_xdt_barplot <- function(trp_xdt_long_format) {
     ) +
     labs(
       x = NULL, 
-      y = "\u00c5rsd\u00f8gntrafikk",
+      y = "Gjennomsnittlig antall passeringer per dag",
       caption = "Data: Statens vegvesen og fylkeskommunene"
     ) +
     ggtitle(
@@ -171,7 +182,89 @@ create_mdt_barplot <- function(trp_mdt_long_format) {
 ```
 
 
-# Kristiansand
+# Sykkeltrafikk i de største byene
+Nedenfor vises gjennomsnittlig antall syklende i sykkelregistreringspunkt i de største byene i Norge. Verdiene gjelder for sommersesongen fra mai til september. Gjennomsnittsberegeningene tar utgangspunkt i sykkelpunkter som har minst tre måneder med gode data i den aktuelle perioden.
+
+
+## Oslo
+```{r, osl, fig.height=10}
+big_cities_bike_mdt |> 
+  dplyr::filter(
+    municipality_name == "Oslo"
+  ) |> 
+  dplyr::rename(
+    xdt = mean_mdt
+  ) |> 
+  create_xdt_barplot()
+```
+
+
+## Trondheim
+```{r, trd, fig.height=3}
+big_cities_bike_mdt |> 
+  dplyr::filter(
+    municipality_name == "Trondheim"
+  ) |> 
+  dplyr::rename(
+    xdt = mean_mdt
+  ) |> 
+  create_xdt_barplot()
+```
+
+
+## Bergen
+```{r, brg, fig.height=15}
+big_cities_bike_mdt |> 
+  dplyr::filter(
+    municipality_name == "Bergen"
+  ) |> 
+  dplyr::rename(
+    xdt = mean_mdt
+  ) |> 
+  create_xdt_barplot()
+```
+
+
+## Stavanger
+```{r, svg, fig.height=10}
+big_cities_bike_mdt |> 
+  dplyr::filter(
+    municipality_name == "Stavanger"
+  ) |> 
+  dplyr::rename(
+    xdt = mean_mdt
+  ) |> 
+  create_xdt_barplot()
+```
+
+
+## Kristiansand
+```{r, krs, fig.height=7}
+big_cities_bike_mdt |> 
+  dplyr::filter(
+    municipality_name == "Kristiansand"
+  ) |> 
+  dplyr::rename(
+    xdt = mean_mdt
+  ) |> 
+  create_xdt_barplot()
+```
+
+
+## Tromsø
+```{r, trs, fig.height=12}
+big_cities_bike_mdt |> 
+  dplyr::filter(
+    municipality_name == "Troms\u00f8"
+  ) |> 
+  dplyr::rename(
+    xdt = mean_mdt
+  ) |> 
+  create_xdt_barplot()
+```
+
+
+
 
 <!--
 ## Årsdøgntrafikk lette kjøretøy
@@ -303,11 +396,12 @@ create_mdt_barplot <- function(trp_mdt_long_format) {
 -->
 
 
+<!--
 ## Månedsdøgntrafikk alle kjøretøy
-
+-->
 ```{r plot_mdt, fig.height=8, fig.width=6}
-trp_mdt_krs %>% 
-  create_mdt_barplot()
+#trp_mdt_krs %>% 
+#  create_mdt_barplot()
 ```
 
 <!--
@@ -319,11 +413,12 @@ trp_mdt_krs %>%
 ```
 -->
 
+<!--
 ## Månedsdøgntrafikk sykkel
-
+-->
 ```{r plot_mdt_bike, fig.height=8, fig.width=6}
-bike_mdt_krs %>% 
-  create_mdt_barplot()
+#bike_mdt_krs %>% 
+#  create_mdt_barplot()
 ```
 
 <!--

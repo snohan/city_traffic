@@ -17,7 +17,8 @@ trps <-
 trp_data_time_span <-
   get_trp_data_time_span()
 
-trp_metadata <- trps %>%
+trp_metadata <-
+  trps %>%
   split_road_system_reference() %>%
   dplyr::left_join(
     trp_data_time_span,
@@ -359,3 +360,119 @@ bike_trp_adt_tro %>%
   saveRDS(file = "data/bike_trp_adt_tro.rds")
 
 
+# Big cities ----
+bike_trps <-
+  trp_metadata %>%
+  dplyr::filter(
+    municipality_name %in%  c(
+      "Oslo",
+      "Trondheim",
+      "Bergen",
+      "Stavanger",
+      "Kristiansand",
+      "Troms\u00f8"
+    ),
+    traffic_type == "BICYCLE"
+  ) %>%
+  dplyr::mutate(
+    road_category_and_number_and_point_name =
+      paste0(road_category_and_number, " ", name)
+  )
+
+## Bike MDT ----
+bike_mdt_2019 <- get_mdt_for_trp_list(bike_trps$trp_id, "2019")
+bike_mdt_2020 <- get_mdt_for_trp_list(bike_trps$trp_id, "2020")
+bike_mdt_2021 <- get_mdt_for_trp_list(bike_trps$trp_id, "2021")
+bike_mdt_2022 <- get_mdt_for_trp_list(bike_trps$trp_id, "2022")
+
+bike_mdts <-
+  dplyr::bind_rows(
+    bike_mdt_2019,
+    bike_mdt_2020,
+    bike_mdt_2021,
+    bike_mdt_2022
+  ) %>%
+  dplyr::filter(
+    coverage > 25,
+    month %in% c(5, 6, 7, 8, 9)
+  ) %>%
+  dplyr::select(trp_id, year, month, mdt) %>%
+  tidyr::complete(trp_id = bike_trps$trp_id, year, month)
+
+# Need at least three months in a year
+bike_trps_enough_data <-
+  bike_mdts |>
+  dplyr::filter(
+    !is.na(mdt)
+  ) |>
+  group_by(
+    trp_id,
+    year
+  ) |>
+  dplyr::summarise(
+    n_months = n(),
+    .groups = "drop_last"
+  ) |>
+  dplyr::filter(
+    n_months >= 3
+  )
+
+bike_trps_in_2022 <-
+  bike_trps_enough_data |>
+  dplyr::filter(
+    year == 2022
+  )
+
+bike_trps_one_more_year_than_2022 <-
+  bike_trps_enough_data |>
+  dplyr::filter(
+    trp_id %in% bike_trps_in_2022$trp_id
+  ) |>
+  dplyr::group_by(
+    trp_id
+  ) |>
+  dplyr::summarise(
+    n_years = n()
+  ) |>
+  dplyr::filter(
+    n_years > 1
+  )
+
+bike_mdt_mean <-
+  bike_mdts %>%
+  dplyr::filter(
+    trp_id %in% bike_trps_one_more_year_than_2022$trp_id
+  ) |>
+  dplyr::group_by(
+    trp_id,
+    year
+  ) |>
+  dplyr::summarise(
+    mean_mdt = base::mean(mdt, na.rm = TRUE) |>
+      base::round()
+  ) |>
+  dplyr::filter(
+    !is.nan(mean_mdt)
+  )
+
+
+bike_trp_mdt <-
+  bike_mdt_mean |>
+  dplyr::left_join(
+    bike_trps,
+    by = "trp_id"
+  ) |>
+  dplyr::select(
+    trp_id,
+    road_category_and_number_and_point_name,
+    municipality_name,
+    year,
+    mean_mdt
+  ) |>
+  dplyr::arrange(
+    municipality_name,
+    road_category_and_number_and_point_name
+  )
+
+bike_trp_mdt %>%
+  saveRDS(file = "data/big_cities_bike_mdt.rds")
