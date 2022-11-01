@@ -1,0 +1,52 @@
+---
+title: "Trafikk i Kristiansand"
+output: 
+  html_document:
+    css: svv.css
+    number_sections: true
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: false
+    toc_depth: 2
+fig_width: 5
+---
+
+```{r setup, include = FALSE, echo = FALSE, warning=FALSE, message=FALSE}
+# Packages are loaded through sourcing rmd_setup.R
+source("H:/Programmering/R/byindeks/rmd_setup.R")
+library(viridis)
+options(warn=-1)
+svv_background_color <- "#F5F5F5"
+```
+
+
+```{r get_data}
+trp_mdt_krs <-
+  readRDS(file = "data/trp_mdt_long_krs.rds")
+
+bike_mdt_krs <-
+  readRDS(file = "data/bike_trp_mdt_long_krs.rds")
+```
+
+
+```{r functions}
+base::source("plot_functions.R")
+```
+
+
+# Månedsdøgntrafikk alle kjøretøy
+```{r plot_mdt, fig.height=8, fig.width=6}
+trp_mdt_krs %>% 
+  create_mdt_barplot()
+```
+
+
+# Månedsdøgntrafikk sykkel
+```{r plot_mdt_bike, fig.height=8, fig.width=6}
+bike_mdt_krs |> 
+  create_mdt_barplot()
+```
+
+
+

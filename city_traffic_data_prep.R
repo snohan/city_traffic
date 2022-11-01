@@ -182,17 +182,20 @@ mdt_2020 <- get_mdt_for_trp_list(city_trps, "2020")
 mdt_2021 <- get_mdt_for_trp_list(city_trps, "2021")
 mdt_2022 <- get_mdt_for_trp_list(city_trps, "2022")
 
-mdts <- dplyr::bind_rows(
-  mdt_2019,
-  mdt_2020,
-  mdt_2021,
-  mdt_2022
-) %>%
+mdts <-
+  dplyr::bind_rows(
+    mdt_2019,
+    mdt_2020,
+    mdt_2021,
+    mdt_2022
+  ) %>%
   dplyr::filter(coverage > 50) %>%
   dplyr::select(trp_id, year, month, mdt) %>%
-  tidyr::complete(trp_id = city_trps, year, month) %>%
+  tidyr::complete(
+    trp_id = city_trps, year, month
+  ) %>%
   dplyr::filter(
-    month %in% c(6, 7, 8)
+    month %in% c(seq(1, 10, 1))
   )
 
 
@@ -289,7 +292,7 @@ bike_mdts <-
   ) %>%
   dplyr::filter(
     coverage > 50,
-    month %in% c(6, 7, 8)
+    month %in% c(seq(1, 10, 1))
   ) %>%
   dplyr::select(trp_id, year, month, mdt) %>%
   tidyr::complete(trp_id = bike_trp_adt$trp_id, year, month)
